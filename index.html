@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Termo - Jogo de Palavras</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121213;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .box {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #3a3a3c;
+      font-size: 2rem;
+      text-transform: uppercase;
+      font-weight: bold;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #121213;
+    }
+
+    .correct {
+      background-color: #538d4e;
+      border-color: #538d4e;
+    }
+
+    .present {
+      background-color: #b59f3b;
+      border-color: #b59f3b;
+    }
+
+    .absent {
+      background-color: #3a3a3c;
+      border-color: #3a3a3c;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Termo</h1>
+  <div id="board"></div>
+  <div class="message" id="message"></div>
+
+  <script>
+    const secretWords = ['carta', 'livro', 'festa', 'prato', 'verde', 'nuvem', 'banco', 'cinto', 'linha'];
+    const secret = secretWords[Math.floor(Math.random() * secretWords.length)];
+    const board = document.getElementById('board');
+    const message = document.getElementById('message');
+
+    const maxRows = 6;
+    const wordLength = 5;
+    let currentRow = 0;
+    let currentCol = 0;
+    let gameOver = false;
+
+    // Cria a grade de caixas
+    const boxes = [];
+
+    for (let r = 0; r < maxRows; r++) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      board.appendChild(row);
+
+      const rowBoxes = [];
+
+      for (let c = 0; c < wordLength; c++) {
+        const box = document.createElement('div');
+        box.className = 'box';
+        row.appendChild(box);
+        rowBoxes.push(box);
+      }
+
+      boxes.push(rowBoxes);
+    }
+
+    let currentGuess = "";
+
+    document.addEventListener('keydown', (e) => {
+      if (gameOver) return;
+
+      if (e.key === 'Backspace') {
+        if (currentCol > 0) {
+          currentCol--;
+          boxes[currentRow][currentCol].textContent = '';
+          currentGuess = currentGuess.slice(0, -1);
+        }
+      } else if (e.key === 'Enter') {
+        if (currentGuess.length === wordLength) {
+          submitGuess();
+        }
+      } else if (/^[a-zA-ZçÇ]$/.test(e.key)) {
+        if (currentCol < wordLength) {
+          boxes[currentRow][currentCol].textContent = e.key.toUpperCase();
+          currentGuess += e.key.toLowerCase();
+          currentCol++;
+        }
+      }
+    });
+
+    function submitGuess() {
+      if (!secretWords.includes(currentGuess)) {
+        message.textContent = "Palavra não está na lista.";
+        return;
+      }
+
+      message.textContent = '';
+      const letterCount = {};
+      for (let char of secret) {
+        letterCount[char] = (letterCount[char] || 0) + 1;
+      }
+
+      // Primeiro passa: marcar corretos
+      for (let i = 0; i < wordLength; i++) {
+        if (currentGuess[i] === secret[i]) {
+          boxes[currentRow][i].classList.add('correct');
+          letterCount[currentGuess[i]]--;
+        }
+      }
+
+      // Segundo passa: marcar presentes
+      for (let i = 0; i < wordLength; i++) {
+        if (currentGuess[i] !== secret[i]) {
+          if (letterCount[currentGuess[i]] > 0) {
+            boxes[currentRow][i].classList.add('present');
+            letterCount[currentGuess[i]]--;
+          } else {
+            boxes[currentRow][i].classList.add('absent');
+          }
+        }
+      }
+
+      if (currentGuess === secret) {
+        message.textContent = "🎉 Parabéns! Você acertou!";
+        gameOver = true;
+        return;
+      }
+
+      currentRow++;
+      currentCol = 0;
+      currentGuess = "";
+
+      if (currentRow === maxRows) {
+        message.textContent = `☹️ Fim de jogo. A palavra era: ${secret.toUpperCase()}`;
+        gameOver = true;
+      }
+    }
+  </script>
+</body>
+</html>
